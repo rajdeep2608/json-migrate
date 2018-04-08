@@ -1,0 +1,81 @@
+<?php
+/**
+ * @file
+ * Install, update and uninstall functions for the qed_city module.
+ *
+ * Implements hook_schema().
+ */
+function qed_city_schema() {
+
+  $schema['city_data'] = array(
+    'description' => 'The base table for city data.',
+    'fields' => array(
+      'city_id' => array(
+        'description' => 'The primary identifier for a city.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the data was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'updated' => array(
+        'description' => 'The Unix timestamp when the data was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+     'title' => array(
+        'description' => 'The title of this data.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+     'latitude' => array(
+        'description' => 'The latitude of this city.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+     'longitude' => array(
+        'description' => 'The longitude of this city.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'population' => array(
+        'description' => 'Total population of the city.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'state' => array(
+        'description' => 'The state where city is located.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('city_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function qed_city_disable() {
+  $training_field_instance = field_info_instances('city_data', 'city_data');
+  foreach ($training_field_instance as $field_data) {
+    field_delete_instance($field_data);
+  }
+}

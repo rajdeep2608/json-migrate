@@ -1,0 +1,14 @@
+name = QED City
+description = Custom Entity to store data about cities
+
+files[] = qed_city.info.inc
+files[] = qed_city.install
+files[] = qed_city.migrate.inc
+
+dependencies[] = entity
+dependencies[] = entityreference
+
+; Information about module
+core = 7.x
+version = "7.x-1.0"
+project = "QED42"

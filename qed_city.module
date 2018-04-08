@@ -1,0 +1,126 @@
+<?php
+/*Implements hook_entity_info()
+ */
+function qed_city_entity_info() {
+  $infp = array();
+  $info['city'] = array(
+    'label' => t('QED City'),// label of the entity to be displayed in the views and all
+    'entity class' => 'Entity',// default entity class
+    'controller class' => 'EntityAPIController',//default controller class, later we can extent this class to make properties of this entity
+    'base table' => 'city_data',// base table for saving the entity properties
+    'fieldable' => TRUE,//set to true, if extra fields are to be attached to the entity
+    'entity keys' => array(// we are setting the entity keys and the bundle as the property named 'type' of this entity.
+      'id' => 'city_id',
+    ),
+    'module' => 'qed_city',
+    'access callback' => 'qed_city_access_callback',
+    'uri callback' => 'entity_class_uri',
+    'admin ui' => array(
+      'path' => 'admin/qed_city',
+      'controller class' => 'EntityDefaultUIController',
+    ),
+    'views controller class' => 'EntityDefaultViewsController',
+  );
+  return $info;
+}
+
+/**
+   * function that defines an access callback for custom entities.
+   *
+   * @param $op
+   *
+   * @return boolean
+   */
+  function qed_city_access_callback($op) {
+    return true;
+  }
+
+
+function qed_city_menu() {
+  $items = array();
+
+  $items['admin/importcity'] = array(
+    'title' => 'Import City',
+    'description' => 'A form to import City from json file.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('qed_city_form'),
+    'access callback' => TRUE
+  );
+
+  return $items;
+}
+function p($arr){
+  print "<pre>";print_r($arr);exit;
+}
+function qed_city_form($form, &$form_state) {
+  $form['files']['city_json'] = [
+    '#type' => 'managed_file',
+    '#title' => t('Import City'),
+    '#description' => t('Upload JSON file to import city.'),
+    '#upload_validators' => [
+      'file_validate_extensions' => ['json']
+    ],
+    '#process' => array('process_json_file')
+  ];
+
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Import'),
+  );
+  $form['#attributes']['enctype'] = "multipart/form-data";
+  return $form;
+}
+
+function qed_city_form_validate($form, &$form_state) {
+}
+
+function process_json_file($element, &$form_state, $form) {
+  $element = file_managed_file_process($element, $form_state, $form);
+  $element['upload_button']['#access'] = FALSE;
+  return $element;
+}
+
+function qed_city_form_submit($form, &$form_state) {
+  if ($form_state['values']['city_json'] == 0) {
+    drupal_set_message(t('Please select a file'),'error');
+    return;
+  }
+
+  $file = file_load($form_state['values']['city_json']);
+  if (!$file) {
+    drupal_set_message(t('Error while loading file'), 'error');
+    return;
+  }
+
+  $file_uri = drupal_realpath($file->uri);
+  if (file_exists($file_uri) && fopen($file_uri, 'r') !== false) {
+    $content = file_get_contents($file_uri);
+    $content = json_decode($content, true);
+    foreach ($content as $key => $city_data) {
+     try {
+          db_merge('city_data')
+          ->key(array('city_id' => $city_data['_id']))
+          ->fields(array(
+              'created' => REQUEST_TIME,
+              'updated' => REQUEST_TIME,
+              'title' => $city_data['city'],
+              'latitude' => $city_data['loc']['0'],
+              'longitude' => $city_data['loc']['1'],
+              'population' => $city_data['pop'],
+              'state' => $city_data['state'],
+          ))->execute();
+      }
+      catch (Exception $e) {
+      // Log the exception to watchdog.
+      watchdog_exception('type', $e);
+      }
+    //p($content);
+  }
+  drupal_set_message("Successfully saved cities.");
+  drupal_goto("/admin/importcity");
+}
+  else {
+    drupal_set_message(t('Error while loading file'), 'error');
+    return;
+  }
+}
