@@ -1,15 +1,21 @@
 <?php
-/*Implements hook_entity_info()
+/**
+ * @file
+ * File contains QED City hooks and APIs.
  */
+
+ /*
+  * Implements hook_entity_info()
+  */
 function qed_city_entity_info() {
   $infp = array();
   $info['city'] = array(
-    'label' => t('QED City'),// label of the entity to be displayed in the views and all
-    'entity class' => 'Entity',// default entity class
-    'controller class' => 'EntityAPIController',//default controller class, later we can extent this class to make properties of this entity
-    'base table' => 'city_data',// base table for saving the entity properties
-    'fieldable' => TRUE,//set to true, if extra fields are to be attached to the entity
-    'entity keys' => array(// we are setting the entity keys and the bundle as the property named 'type' of this entity.
+    'label' => t('QED City'),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'base table' => 'city_data',
+    'fieldable' => TRUE,
+    'entity keys' => array(
       'id' => 'city_id',
     ),
     'module' => 'qed_city',
@@ -24,18 +30,21 @@ function qed_city_entity_info() {
   return $info;
 }
 
-/**
-   * function that defines an access callback for custom entities.
+  /**
+   * Function that defines an access callback for custom entities.
    *
-   * @param $op
+   * @param object $op
    *
-   * @return boolean
+   * @return bool
+          TRUE or FLASE
    */
-  function qed_city_access_callback($op) {
-    return true;
-  }
+function qed_city_access_callback($op) {
+  return TRUE;
+}
 
-
+ /*
+  * Implements hook_menu()
+  */
 function qed_city_menu() {
   $items = array();
 
@@ -44,14 +53,15 @@ function qed_city_menu() {
     'description' => 'A form to import City from json file.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('qed_city_form'),
-    'access callback' => TRUE
+    'access callback' => TRUE,
   );
 
   return $items;
 }
-function p($arr){
-  print "<pre>";print_r($arr);exit;
-}
+ /*
+  * Implements hook_form()
+  */
+
 function qed_city_form($form, &$form_state) {
   $form['files']['city_json'] = [
     '#type' => 'managed_file',
@@ -71,8 +81,9 @@ function qed_city_form($form, &$form_state) {
   return $form;
 }
 
-function qed_city_form_validate($form, &$form_state) {
-}
+ /*
+  * Custom funtion to process JSON file.
+  */
 
 function process_json_file($element, &$form_state, $form) {
   $element = file_managed_file_process($element, $form_state, $form);
@@ -80,9 +91,12 @@ function process_json_file($element, &$form_state, $form) {
   return $element;
 }
 
+ /*
+  * Implements form_submit_handler()
+  */
 function qed_city_form_submit($form, &$form_state) {
   if ($form_state['values']['city_json'] == 0) {
-    drupal_set_message(t('Please select a file'),'error');
+    drupal_set_message(t('Please select a file'), 'error');
     return;
   }
 
@@ -93,14 +107,14 @@ function qed_city_form_submit($form, &$form_state) {
   }
 
   $file_uri = drupal_realpath($file->uri);
-  if (file_exists($file_uri) && fopen($file_uri, 'r') !== false) {
+  if (file_exists($file_uri) && fopen($file_uri, 'r') !== FALSE) {
     $content = file_get_contents($file_uri);
-    $content = json_decode($content, true);
+    $content = json_decode($content, TRUE);
     foreach ($content as $key => $city_data) {
-     try {
-          db_merge('city_data')
-          ->key(array('city_id' => $city_data['_id']))
-          ->fields(array(
+      try {
+        db_merge('city_data')
+              ->key(array('city_id' => $city_data['_id']))
+               ->fields(array(
               'created' => REQUEST_TIME,
               'updated' => REQUEST_TIME,
               'title' => $city_data['city'],
@@ -108,17 +122,16 @@ function qed_city_form_submit($form, &$form_state) {
               'longitude' => $city_data['loc']['1'],
               'population' => $city_data['pop'],
               'state' => $city_data['state'],
-          ))->execute();
+                ))->execute();
       }
       catch (Exception $e) {
-      // Log the exception to watchdog.
-      watchdog_exception('type', $e);
+        // Log the exception to watchdog.
+        watchdog_exception('type', $e);
       }
-    //p($content);
+    }
+    drupal_set_message("Successfully saved cities.");
+    drupal_goto("/admin/importcity");
   }
-  drupal_set_message("Successfully saved cities.");
-  drupal_goto("/admin/importcity");
-}
   else {
     drupal_set_message(t('Error while loading file'), 'error');
     return;

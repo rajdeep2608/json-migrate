@@ -5,6 +5,7 @@
  *
  * Implements hook_schema().
  */
+
 function qed_city_schema() {
 
   $schema['city_data'] = array(
@@ -28,21 +29,21 @@ function qed_city_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
-     'title' => array(
+      'title' => array(
         'description' => 'The title of this data.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
-     'latitude' => array(
+      'latitude' => array(
         'description' => 'The latitude of this city.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
         'default' => '',
       ),
-     'longitude' => array(
+      'longitude' => array(
         'description' => 'The longitude of this city.',
         'type' => 'varchar',
         'length' => 255,
